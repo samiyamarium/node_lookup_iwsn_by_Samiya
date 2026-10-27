@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Industrial WSN console</title>
+<style>
+:root{--bg1:#232a2e;--bg2:#0d1012;--panel:#2b3237;--panel2:#1d2327;--edge:#55616a;--ink:#e8ecee;--muted:#98a5ab;--amber:#ffb000;--ok:#43d17a;--warn:#ffb000;--bad:#ff5a4d;--off:#7a858b;--grid:rgba(255,255,255,.045);
+--head:Bahnschrift,"Arial Narrow","Roboto Condensed",Impact,sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg1:#e1e4e6;--bg2:#b3b9bd;--panel:#eef0f1;--panel2:#dfe2e4;--edge:#98a2a8;--ink:#1c2226;--muted:#4d595f;--amber:#b87300;--ok:#157a40;--warn:#a86500;--bad:#b3261e;--grid:rgba(0,0,0,.06)}}
+:root[data-theme="light"]{--bg1:#e1e4e6;--bg2:#b3b9bd;--panel:#eef0f1;--panel2:#dfe2e4;--edge:#98a2a8;--ink:#1c2226;--muted:#4d595f;--amber:#b87300;--ok:#157a40;--warn:#a86500;--bad:#b3261e;--grid:rgba(0,0,0,.06)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100vh;color:var(--ink);font:16px/1.5 system-ui,sans-serif;background:repeating-linear-gradient(0deg,var(--grid) 0 1px,transparent 1px 36px),repeating-linear-gradient(90deg,var(--grid) 0 1px,transparent 1px 36px),radial-gradient(ellipse at 50% 0,var(--bg1),var(--bg2) 80%);background-attachment:fixed}
+.hazard{height:14px;background:repeating-linear-gradient(-45deg,#ffb000 0 16px,#16191b 16px 32px);border-bottom:2px solid #000}
+main{max-width:1040px;margin:0 auto;padding:24px 16px 56px}
+h1{font:700 2.2rem/1.1 var(--head);margin:0;letter-spacing:.02em}
+.sub{color:var(--muted);margin:4px 0 20px}
+.panel{position:relative;background:linear-gradient(180deg,var(--panel),var(--panel2));border:2px solid var(--edge);border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 12px 28px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+.riv{position:absolute;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d4dbdf,#59636a)}
+.riv:nth-of-type(1){top:8px;left:8px}.riv:nth-of-type(2){top:8px;right:8px}.riv:nth-of-type(3){bottom:8px;left:8px}.riv:nth-of-type(4){bottom:8px;right:8px}
+.mrow{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.mbtn{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;font:700 1.9rem var(--head);color:#ffc933;background:radial-gradient(circle at 35% 28%,#78858d,#2a3136 72%);box-shadow:0 0 0 5px var(--panel2),0 0 0 7px var(--amber),0 0 24px 4px var(--amber),inset 0 2px 3px rgba(255,255,255,.3);flex:none}
+.mstats{flex:1 1 320px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat span{display:block;color:var(--muted);font-size:.85rem}.stat b{font:700 1.5rem var(--mono)}
+.up{grid-column:1/-1}
+.bar{height:10px;border-radius:99px;background:rgba(128,140,148,.3);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;border-radius:inherit;background:var(--c,var(--ok))}
+.ctl{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.pillbtn{padding:10px 22px;border-radius:999px;border:0;font-weight:700;font-size:.95rem;cursor:pointer;color:#1a1200;background:linear-gradient(180deg,#ffc933,#e09a00);box-shadow:0 3px 0 #8a5d00}
+.pillbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #8a5d00}
+.pillbtn[aria-pressed="true"]{background:linear-gradient(180deg,#ff8a7d,#e0392b);color:#fff;box-shadow:0 3px 0 #7a1a12}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+h2.t{font:700 1.3rem var(--head);letter-spacing:.03em;margin:0 0 10px}
+.alarms{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:2px solid var(--bad);background:rgba(255,90,77,.15);color:var(--ink);border-radius:999px;padding:5px 14px;cursor:pointer;font:inherit;font-size:.9rem;animation:blink 1.1s infinite}
+.none{color:var(--muted)}
+@keyframes blink{50%{background:rgba(255,90,77,.45)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:18px 10px;justify-items:center}
+.nb{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;color:var(--ink);cursor:pointer;font:inherit}
+.dot{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;font:700 1.2rem var(--head);color:#f1f4f5;background:radial-gradient(circle at 35% 28%,#78858d,#2a3136 72%);box-shadow:0 0 0 4px var(--panel2),0 0 0 6px var(--c),0 0 14px 2px var(--c),0 8px 12px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,255,255,.3);transition:transform .12s}
+.nb:active .dot{transform:translateY(3px) scale(.97)}
+.nb.alarm .dot{animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 4px var(--panel2),0 0 0 6px var(--c),0 0 28px 8px var(--c),0 8px 12px rgba(0,0,0,.45)}}
+.nb small{color:var(--muted);font-size:.75rem}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;color:var(--muted);font-size:.85rem}
+.legend span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--c);margin-right:6px;vertical-align:-1px}
+dialog{padding:0;border:2px solid var(--edge);border-radius:16px;width:min(580px,94vw);max-height:88vh;background:var(--panel);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+.card{padding:18px 20px}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ch h2{margin:0;font:700 1.6rem var(--head)}.state{font-weight:600}
+.led{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:0 0 10px 2px var(--c)}
+.x{margin-left:auto;width:40px;height:40px;border-radius:50%;border:2px solid var(--edge);background:var(--panel2);color:var(--ink);font-size:1.4rem;cursor:pointer}
+.card h3{font:700 1.05rem var(--head);letter-spacing:.03em;margin:16px 0 8px;border-bottom:2px solid var(--amber);padding-bottom:4px}
+.sr{display:grid;grid-template-columns:1.3fr 1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:8px;font-size:.92rem}
+.sr b{font-family:var(--mono);text-align:right}.sr em{font-style:normal;color:var(--muted);font-size:.8rem;min-width:62px;text-align:right}
+.sr.al{background:rgba(255,90,77,.18);outline:2px solid var(--bad);animation:blink 1.1s infinite}
+.sr.al em{color:var(--bad);font-weight:700}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.9rem}
+dt{color:var(--muted)}dd{margin:0;text-align:right}
+.proto{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:12px 14px}
+.proto strong{display:block;font:700 1.15rem var(--head);color:var(--amber);margin-bottom:8px}
+.note{font-size:.85rem;color:var(--warn);margin:8px 0 0}
+.foot{font-size:.8rem;color:var(--muted);margin-top:14px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+.ticker{overflow:hidden;white-space:nowrap;background:#16191b;color:#ffb000;font:600 .9rem var(--mono);padding:7px 0;border-bottom:1px solid #000}
+.track{display:inline-flex;animation:slide 38s linear infinite}.track span{padding-right:3rem}
+@keyframes slide{to{transform:translateX(-50%)}}
+.picks{display:flex;gap:34px;flex-wrap:wrap;justify-content:center;margin-bottom:22px}
+.mb{display:flex;flex-direction:column;align-items:center;gap:10px;background:none;border:0;color:var(--ink);cursor:pointer;font:inherit;max-width:150px;text-align:center}
+.mdot{position:relative;width:96px;height:96px;border-radius:50%;display:grid;place-items:center;font:700 1.7rem var(--head);color:#f1f4f5;background:radial-gradient(circle at 35% 28%,#78858d,#2a3136 72%);box-shadow:0 0 0 5px var(--panel2),0 0 0 7px var(--edge),0 10px 16px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.3)}
+.mb[aria-pressed="true"] .mdot{color:#ffc933;box-shadow:0 0 0 5px var(--panel2),0 0 0 7px var(--amber),0 0 24px 5px var(--amber),inset 0 2px 3px rgba(255,255,255,.3)}
+.mb:active .mdot{transform:translateY(3px) scale(.97)}
+.badge{position:absolute;top:-4px;right:-4px;min-width:28px;height:28px;border-radius:50%;background:var(--bad);color:#fff;font:700 .85rem system-ui;display:grid;place-items:center;border:2px solid var(--panel2)}
+.mb small{color:var(--muted);font-size:.85rem}
+.sub2{margin:0 0 4px;color:var(--muted);font-size:.9rem}
+@media (prefers-reduced-motion:reduce){.track{flex-wrap:wrap}.track span+span{display:none}.ticker{white-space:normal}}
+</style>
+</head>
+<body>
+<div class="ticker" role="note"><div class="track"><span id="tk1"></span><span id="tk2"></span></div></div>
+<div class="hazard"></div>
+<main>
+<h1>Industrial WSN console</h1>
+<p class="sub">Three master gateways, thirty slave nodes each. Select a master, then a round node button for its sensors and protocol card.</p>
+<section class="panel"><i class="riv"></i><i class="riv"></i><i class="riv"></i><i class="riv"></i>
+<div class="picks" id="picks"></div>
+<div class="mstats">
+<div class="stat"><span>Slaves online</span><b id="sOn"></b></div>
+<div class="stat"><span>Active alarms</span><b id="sAl"></b></div>
+<div class="stat"><span>Bandwidth constrained</span><b id="sCo"></b></div>
+<div class="stat up"><span id="sUpT"></span><div class="bar"><i id="sUp"></i></div></div>
+</div>
+<div class="ctl"><button class="pillbtn" id="snd" aria-pressed="false">Alarm sound: off</button></div>
+</section>
+<section class="panel"><i class="riv"></i><i class="riv"></i><i class="riv"></i><i class="riv"></i>
+<h2 class="t">Active alarms, all masters</h2><div class="alarms" id="al"></div></section>
+<section class="panel"><i class="riv"></i><i class="riv"></i><i class="riv"></i><i class="riv"></i>
+<h2 class="t" id="gt">Slave nodes</h2><div class="grid" id="grid"></div>
+<div class="legend"><span style="--c:var(--ok)">Normal</span><span style="--c:var(--bad)">Sensor alarm</span><span style="--c:var(--warn)">Delayed link</span><span style="--c:var(--off)">Offline</span></div></section>
+<p class="foot">Readings are simulated, generated fresh on every page load and drifting every 3 seconds.</p>
+</main>
+<dialog id="dlg"></dialog>
+<script>
+var SD={
+ptemp:{nm:"Process temperature",u:"°C",min:10,max:130,lo:null,hi:90,n0:40,n1:75,dp:1,hz:520},
+press:{nm:"Pipeline pressure",u:"kPa",min:80,max:900,lo:null,hi:650,n0:250,n1:520,dp:0,hz:900},
+level:{nm:"Tank level",u:"%",min:0,max:100,lo:12,hi:95,n0:30,n1:85,dp:0,hz:780},
+gas:{nm:"Combustible gas",u:"%LEL",min:0,max:100,lo:null,hi:20,n0:0,n1:8,dp:1,hz:1250},
+vib:{nm:"Vibration",u:"mm/s",min:0,max:30,lo:null,hi:11,n0:1,n1:7,dp:1,hz:1000},
+gtemp:{nm:"Air temperature",u:"°C",min:0,max:50,lo:10,hi:38,n0:20,n1:32,dp:1,hz:560},
+humid:{nm:"Humidity",u:"%RH",min:10,max:100,lo:40,hi:90,n0:55,n1:80,dp:0,hz:600},
+soil:{nm:"Soil moisture",u:"%",min:0,max:100,lo:20,hi:null,n0:35,n1:70,dp:0,hz:700},
+ldr:{nm:"Light (LDR)",u:"lux",min:0,max:1000,lo:60,hi:null,n0:200,n1:800,dp:0,hz:660},
+mtemp:{nm:"Motor temperature",u:"°C",min:15,max:120,lo:null,hi:85,n0:40,n1:70,dp:1,hz:520},
+smoke:{nm:"Smoke",u:"ppm",min:0,max:600,lo:null,hi:300,n0:5,n1:80,dp:0,hz:1150},
+air:{nm:"Air line pressure",u:"kPa",min:100,max:1000,lo:null,hi:800,n0:500,n1:700,dp:0,hz:920},
+noise:{nm:"Noise",u:"dB",min:40,max:120,lo:null,hi:95,n0:55,n1:85,dp:0,hz:840}};
+for(var k in SD)SD[k].k=k;
+var PROTOS=[
+{s:"6TiSCH",n:"IEEE 802.15.4e TSCH with 6TiSCH",phy:"IEEE 802.15.4-2020, O-QPSK 2.4 GHz",mac:"802.15.4e TSCH, channel hopping",net:"6LoWPAN, RPL (RFC 6550)",tr:"UDP, CoAP (RFC 7252)",sec:"OSCORE, AES-CCM-128",cap:250},
+{s:"WirelessHART",n:"WirelessHART (IEC 62591)",phy:"IEEE 802.15.4, 2.4 GHz",mac:"TDMA, 10 ms slots, hopping",net:"Graph and source routing mesh",tr:"HART-IP",sec:"AES-128, join keys",cap:250},
+{s:"ISA100.11a",n:"ISA100.11a (IEC 62734)",phy:"IEEE 802.15.4, 2.4 GHz",mac:"TDMA with slow and fast hopping",net:"6LoWPAN, graph routing",tr:"UDP",sec:"AES-CCM, asymmetric join",cap:250},
+{s:"Zigbee PRO",n:"Zigbee PRO R22",phy:"IEEE 802.15.4, 2.4 GHz",mac:"CSMA/CA",net:"Zigbee mesh routing (AODV)",tr:"APS, Zigbee Cluster Library",sec:"AES-128, install codes",cap:250},
+{s:"Thread 1.3",n:"Thread 1.3",phy:"IEEE 802.15.4, 2.4 GHz",mac:"CSMA/CA",net:"6LoWPAN, MLE routing",tr:"UDP, CoAP",sec:"AES-CCM, DTLS commissioning",cap:250},
+{s:"LoRaWAN",n:"LoRaWAN 1.0.4 (Class A)",phy:"Sub-GHz LoRa chirp spread spectrum",mac:"LoRaWAN MAC, duty cycled",net:"Star topology via gateway",tr:"Application payload over MAC",sec:"AES-128 NwkSKey and AppSKey",cap:50}];
+var MASTERS=[
+{id:"M1",name:"Oil and gas refinery",k:["ptemp","press","level","gas","vib"],pr:[1,2,0]},
+{id:"M2",name:"Smart greenhouse farming",k:["gtemp","humid","soil","ldr","level"],pr:[3,4,5]},
+{id:"M3",name:"Discrete manufacturing plant",k:["mtemp","vib","smoke","air","noise"],pr:[0,1,4]}];
+var COL={ok:"var(--ok)",alarm:"var(--bad)",delay:"var(--warn)",off:"var(--off)"},LBL={ok:"Normal",alarm:"Sensor alarm",delay:"Delayed link",off:"Offline"};
+var UPLINK=1000,sel=0,cur=null,ac=null,snd=false;
+var MSG="Disclaimer: all data and design shown here are dummy and for showcase purposes only.   ***   ";
+tk1.textContent=tk2.textContent=MSG+MSG+MSG;
+function rnd(a,b){return a+Math.random()*(b-a)}
+function sens(m){return m.k.map(function(k){return SD[k]})}
+function isBad(s,v){return (s.hi!==null&&v>s.hi)||(s.lo!==null&&v<s.lo)}
+function mk(i,m){
+ var p=PROTOS[m.pr[Math.floor(Math.random()*m.pr.length)]],bw=Math.max(5,Math.round(p.cap*rnd(.08,.25)));
+ var n={i:i,id:"S"+(i<10?"0":"")+i,p:p,bw:bw,thr:bw*rnd(.1,.98),lat:Math.random()<.1?rnd(800,3500):rnd(20,250),rssi:Math.round(rnd(-92,-50)),pdr:rnd(92,100),batt:Math.round(rnd(35,100)),off:Math.random()<.03,vals:{}};
+ sens(m).forEach(function(s){
+  if(Math.random()<.025){var up=s.hi!==null&&(s.lo===null||Math.random()<.5);n.vals[s.k]=up?s.hi+rnd(.05,.3)*(s.max-s.hi):s.lo*rnd(.1,.7)}
+  else n.vals[s.k]=rnd(s.n0,s.n1)});
+ return n}
+function gen(){
+ MASTERS.forEach(function(m){m.nodes=[];for(var i=1;i<=30;i++)m.nodes.push(mk(i,m))});
+ if(!alarms().length){var m=MASTERS[Math.floor(Math.random()*3)],n=m.nodes[Math.floor(Math.random()*30)],s=sens(m).filter(function(x){return x.hi!==null})[0];n.off=false;n.vals[s.k]=s.hi+.1*(s.max-s.hi)}
+ render()}
+function alarmsOf(m){var a=[];m.nodes.forEach(function(n){if(!n.off)sens(m).forEach(function(s){if(isBad(s,n.vals[s.k]))a.push({m:m,n:n,s:s,v:n.vals[s.k]})})});return a}
+function alarms(){var a=[];MASTERS.forEach(function(m){a=a.concat(alarmsOf(m))});return a}
+function stOf(n,m){return n.off?"off":(sens(m).some(function(s){return isBad(s,n.vals[s.k])})?"alarm":(n.lat>500?"delay":"ok"))}
+function render(){
+ var m=MASTERS[sel],on=m.nodes.filter(function(n){return!n.off}),tot=on.reduce(function(a,n){return a+n.thr},0);
+ var con=on.filter(function(n){return n.thr/n.bw>.85}).length,u=tot/UPLINK,h="";
+ MASTERS.forEach(function(x,j){var c=alarmsOf(x).length;h+='<button class="mb" data-m="'+j+'" aria-pressed="'+(j===sel)+'"><span class="mdot">'+x.id+(c?'<span class="badge">'+c+"</span>":"")+"</span><small>"+x.name+"</small></button>"});
+ picks.innerHTML=h;
+ sOn.textContent=on.length+" / 30";sAl.textContent=alarmsOf(m).length;sCo.textContent=con;
+ sUpT.textContent=m.id+" uplink: "+tot.toFixed(0)+" kbps of "+UPLINK+" kbps ("+(u*100).toFixed(0)+"%)";
+ sUp.style.width=Math.min(100,u*100)+"%";sUp.style.setProperty("--c",u>.85?"var(--warn)":"var(--ok)");
+ h="";alarms().forEach(function(a){h+='<button class="pill" data-m="'+MASTERS.indexOf(a.m)+'" data-i="'+a.n.i+'">'+a.m.id+" "+a.n.id+" "+a.s.nm+" "+a.v.toFixed(a.s.dp)+" "+a.s.u+"</button>"});
+ al.innerHTML=h||'<span class="none">No active alarms.</span>';
+ gt.textContent=m.id+", "+m.name+": 30 slave nodes";
+ h="";m.nodes.forEach(function(n){var s=stOf(n,m);h+='<button class="nb '+s+'" data-m="'+sel+'" data-i="'+n.i+'" style="--c:'+COL[s]+'" aria-label="'+n.id+', '+LBL[s]+'"><span class="dot">'+n.id.slice(1)+"</span><small>"+n.p.s+"</small></button>"});
+ grid.innerHTML=h;
+ if(cur&&dlg.open)fill(cur.m,cur.i)}
+function fill(mi,i){
+ var m=MASTERS[mi],n=m.nodes[i-1],s=stOf(n,m),c=COL[s],u=n.thr/n.bw,p=n.p;
+ var h='<div class="card"><div class="ch"><span class="led" style="--c:'+c+'"></span><h2>'+n.id+'</h2><span class="state" style="color:'+c+'">'+LBL[s]+'</span><button class="x" aria-label="Close">×</button></div><p class="sub2">'+m.id+", "+m.name+"</p><h3>Sensors</h3>";
+ sens(m).forEach(function(sn){var v=n.vals[sn.k],a=!n.off&&isBad(sn,v),lim=(sn.lo!==null?"min "+sn.lo:"")+(sn.lo!==null&&sn.hi!==null?", ":"")+(sn.hi!==null?"max "+sn.hi:"");
+  h+='<div class="sr'+(a?" al":"")+'"><span>'+sn.nm+" <small>("+lim+")</small></span><b>"+(n.off?"--":v.toFixed(sn.dp)+" "+sn.u)+"</b><em>"+(a?"Alert":n.off?"No data":"Normal")+"</em></div>"});
+ h+='<h3>Protocol in use</h3><div class="proto"><strong>'+p.n+'</strong><dl><dt>Physical</dt><dd>'+p.phy+"</dd><dt>MAC</dt><dd>"+p.mac+"</dd><dt>Network</dt><dd>"+p.net+"</dd><dt>Transport</dt><dd>"+p.tr+"</dd><dt>Security</dt><dd>"+p.sec+"</dd></dl></div>";
+ h+='<h3>Throughput and bandwidth</h3><dl><dt>Throughput</dt><dd>'+n.thr.toFixed(1)+" kbps</dd><dt>Allocated bandwidth</dt><dd>"+n.bw+" kbps</dd><dt>Channel capacity</dt><dd>"+p.cap+" kbps shared</dd><dt>Latency</dt><dd>"+n.lat.toFixed(0)+" ms</dd><dt>Packet delivery</dt><dd>"+n.pdr.toFixed(1)+"%</dd><dt>Signal (RSSI)</dt><dd>"+n.rssi+" dBm</dd><dt>Battery</dt><dd>"+n.batt+"%</dd></dl>";
+ h+='<div class="bar" style="--c:'+(u>.85?"var(--warn)":"var(--ok)")+'"><i style="width:'+Math.min(100,u*100)+'%"></i></div>';
+ if(u>.85)h+='<p class="note">Constraint: this node uses over 85% of its allocated bandwidth, so expect queueing and added delay.</p>';
+ dlg.innerHTML=h+"</div>"}
+function beep(hz,t){var o=ac.createOscillator(),g=ac.createGain();o.type="square";o.frequency.value=hz;g.gain.value=.06;o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+.18)}
+function loop(){if(!snd||!ac)return;var seen={},i=0;alarms().forEach(function(a){if(seen[a.s.k]||i>3)return;seen[a.s.k]=1;beep(a.s.hz,ac.currentTime+i*.26);i++})}
+function tick(){MASTERS.forEach(function(m){m.nodes.forEach(function(n){
+ sens(m).forEach(function(s){n.vals[s.k]=Math.max(s.min,Math.min(s.max,n.vals[s.k]+rnd(-1,1)*(s.max-s.min)*.012))});
+ n.thr=Math.max(.05*n.bw,Math.min(n.bw,n.thr+rnd(-.08,.08)*n.bw));n.lat=Math.max(15,n.lat*rnd(.92,1.08))})});render()}
+document.addEventListener("click",function(e){
+ var b=e.target.closest("[data-i]");
+ if(b){sel=+b.dataset.m;cur={m:sel,i:+b.dataset.i};render();fill(cur.m,cur.i);if(!dlg.open)dlg.showModal();return}
+ b=e.target.closest(".mb");if(b){sel=+b.dataset.m;render();return}
+ if(e.target===dlg||e.target.classList.contains("x"))dlg.close()});
+dlg.addEventListener("close",function(){cur=null});
+document.getElementById("snd").onclick=function(){
+ if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();ac.resume();snd=!snd;
+ this.setAttribute("aria-pressed",snd);this.textContent="Alarm sound: "+(snd?"on":"off");if(snd)loop()};
+setInterval(loop,2500);setInterval(tick,3000);gen();
+</script>
+</body>
+</html>
